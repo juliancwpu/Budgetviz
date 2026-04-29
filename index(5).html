@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BudgetViz — Smart Budget Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c27;
+      --border: #2a2a3d;
+      --accent: #00e5a0;
+      --accent2: #7b5ea7;
+      --accent3: #f7c948;
+      --danger: #ff5c5c;
+      --text: #eeeef5;
+      --muted: #7a7a9a;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+    .glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.1; pointer-events: none; z-index: 0; }
+    .glow-1 { background: var(--accent); top: -200px; left: -100px; }
+    .glow-2 { background: var(--accent2); bottom: -200px; right: -100px; }
+
+    .wrapper { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 100px; }
+
+    /* LANGUAGE SWITCHER */
+    .lang-bar {
+      display: flex; justify-content: flex-end; padding: 12px 0 0;
+      gap: 6px; flex-wrap: wrap;
+    }
+    .lang-btn {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 8px; padding: 5px 12px;
+      font-size: 0.78rem; font-family: var(--font-body); cursor: pointer;
+      transition: all 0.2s; display: flex; align-items: center; gap: 5px;
+    }
+    .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.08); }
+
+    /* HEADER */
+    header {
+      padding: 32px 0 36px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      animation: fadeDown 0.6s ease both;
+    }
+    .logo { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
+    .logo span { color: var(--accent); }
+    .tagline { font-size: 0.82rem; color: var(--muted); font-style: italic; padding-bottom: 4px; }
+
+    /* HERO */
+    .hero {
+      padding: 56px 0 48px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+      animation: fadeUp 0.7s ease 0.1s both;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,229,160,0.08);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 99px; padding: 6px 14px;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 24px;
+    }
+    .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.03em; margin-bottom: 20px;
+    }
+    .hero h1 em { color: var(--accent); font-style: normal; }
+    .hero p { font-size: 1.05rem; color: var(--muted); line-height: 1.7; max-width: 620px; margin-bottom: 36px; }
+
+    .how-it-works { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 600px) { .how-it-works { grid-template-columns: 1fr; } }
+    .step-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px; position: relative; overflow: hidden;
+    }
+    .step-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+    .step-num { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: rgba(0,229,160,0.15); line-height: 1; margin-bottom: 8px; }
+    .step-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
+    .step-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+    /* MAIN GRID */
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; margin-bottom: 48px; }
+    @media (max-width: 720px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; animation: fadeUp 0.6s ease both; }
+    .card-title {
+      font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+    /* INPUTS */
+    .input-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    label { font-size: 0.75rem; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+    input[type="number"], input[type="text"] {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: var(--font-body);
+      font-size: 1rem; padding: 12px 16px; width: 100%; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.1); }
+    input::placeholder { color: var(--muted); opacity: 0.5; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* EXPENSE ROWS */
+    .expense-list { display: flex; flex-direction: column; gap: 12px; }
+    .expense-row { display: grid; grid-template-columns: 1fr 120px 36px; gap: 8px; align-items: center; animation: fadeUp 0.3s ease both; }
+    .btn-remove { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; width: 36px; height: 36px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding-bottom: 2px; }
+    .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-add { margin-top: 16px; background: none; border: 1px dashed var(--border); color: var(--muted); border-radius: 10px; padding: 10px; width: 100%; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; transition: all 0.2s; }
+    .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-calculate { margin-top: 20px; background: var(--accent); color: #000; border: none; border-radius: 12px; padding: 14px; width: 100%; cursor: pointer; font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; transition: all 0.2s; box-shadow: 0 0 24px rgba(0,229,160,0.2); }
+    .btn-calculate:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(0,229,160,0.35); }
+
+    /* RESULTS */
+    .results-card { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .stat-value { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; }
+    .stat-value.income { color: var(--accent); }
+    .stat-value.expenses { color: var(--accent3); }
+    .stat-value.savings.positive { color: var(--accent); }
+    .stat-value.savings.negative { color: var(--danger); }
+    .stat-value.rate { color: var(--accent2); }
+    .chart-wrap { position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+    canvas#donutChart { max-width: 190px; }
+    .chart-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); text-align: center; pointer-events: none; }
+    .chart-center-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .chart-center-value { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; }
+    .legend { width: 100%; display: flex; flex-direction: column; gap: 7px; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.83rem; }
+    .legend-left { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .legend-name { color: var(--muted); }
+    .legend-pct { font-family: var(--font-display); font-weight: 600; font-size: 0.88rem; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; flex-direction: column; gap: 4px; }
+    .bar-label-row { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); }
+    .bar-label-amt { font-family: var(--font-display); font-weight: 600; color: var(--text); }
+    .bar-track { background: var(--surface2); border-radius: 99px; height: 7px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(0.16,1,0.3,1); width: 0; }
+    .empty-state { text-align: center; padding: 36px 20px; color: var(--muted); font-style: italic; font-size: 0.9rem; }
+
+    /* AI CHAT */
+    .section-divider { display: flex; align-items: center; gap: 16px; margin: 56px 0 40px; }
+    .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .section-divider-label { font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+
+    .ai-header { margin-bottom: 24px; }
+    .ai-header h2 { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .ai-header h2 span { color: var(--accent); }
+    .ai-header p { color: var(--muted); font-size: 0.92rem; line-height: 1.6; max-width: 560px; }
+
+    .ai-quick-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .quick-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 99px; padding: 8px 16px; font-size: 0.8rem; font-family: var(--font-body); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .quick-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.05); }
+
+    .chat-window { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .chat-messages { height: 380px; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg { display: flex; gap: 12px; animation: fadeUp 0.3s ease both; }
+    .msg.user { flex-direction: row-reverse; }
+    .msg-avatar { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; font-family: var(--font-display); }
+    .msg.assistant .msg-avatar { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+    .msg.user .msg-avatar { background: rgba(123,94,167,0.2); color: var(--accent2); border: 1px solid rgba(123,94,167,0.3); }
+    .msg-bubble { max-width: 80%; padding: 12px 16px; border-radius: 14px; font-size: 0.9rem; line-height: 1.6; }
+    .msg.assistant .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-top-left-radius: 4px; }
+    .msg.user .msg-bubble { background: rgba(123,94,167,0.2); border: 1px solid rgba(123,94,167,0.3); border-top-right-radius: 4px; }
+
+    .typing-indicator { display: flex; gap: 5px; align-items: center; }
+    .typing-indicator span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; animation: bounce 1.2s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+    .chat-input-row { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); }
+    .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: var(--font-body); font-size: 0.9rem; padding: 11px 16px; outline: none; resize: none; transition: border-color 0.2s; }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--muted); opacity: 0.5; }
+    .btn-send { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; font-family: var(--font-display); font-size: 0.85rem; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
+    .btn-send:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(0,229,160,0.3); }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* RECOMMENDATIONS */
+    .reco-section { margin-bottom: 48px; animation: fadeUp 0.5s ease both; }
+    .reco-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .reco-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px; position: relative; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .reco-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .reco-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .reco-card.good::before { background: var(--accent); }
+    .reco-card.warn::before { background: var(--accent3); }
+    .reco-card.danger::before { background: var(--danger); }
+    .reco-card.tip::before { background: var(--accent2); }
+    .reco-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+    .reco-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+    .reco-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; line-height: 1.3; }
+    .reco-title.good { color: var(--accent); }
+    .reco-title.warn { color: var(--accent3); }
+    .reco-title.danger { color: var(--danger); }
+    .reco-title.tip { color: var(--accent2); }
+    .reco-body { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+    .reco-body strong { color: var(--text); font-weight: 600; }
+    .reco-score-bar { margin-top: 10px; }
+    .reco-score-track { background: var(--surface2); border-radius: 99px; height: 5px; overflow: hidden; margin-top: 5px; }
+    .reco-score-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.16,1,0.3,1); }
+
+    .reco-loading {
+      display: flex; align-items: center; gap: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px;
+    }
+    .reco-loading-text { font-size: 0.9rem; color: var(--muted); font-style: italic; }
+    .reco-health-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      border-radius: 99px; padding: 5px 14px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .reco-health-badge.good { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.25); color: var(--accent); }
+    .reco-health-badge.warn { background: rgba(247,201,72,0.1); border: 1px solid rgba(247,201,72,0.25); color: var(--accent3); }
+    .reco-health-badge.danger { background: rgba(255,92,92,0.1); border: 1px solid rgba(255,92,92,0.25); color: var(--danger); }
+    .ai-reco-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; margin-top: 16px;
+      border-top: 3px solid var(--accent2);
+    }
+    .ai-reco-title { font-family: var(--font-display); font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent2); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .ai-reco-title::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--accent2); box-shadow:0 0 8px var(--accent2); display:inline-block; }
+    .ai-reco-body { font-size: 0.88rem; color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
+    .ai-reco-body strong { color: var(--text); }
+
+    /* NAV TABS */
+    .nav-tabs {
+      display: flex; gap: 4px; margin-top: 20px;
+      border-bottom: 1px solid var(--border); padding-bottom: 0;
+    }
+    .nav-tab {
+      background: none; border: none; color: var(--muted);
+      font-family: var(--font-display); font-size: 0.82rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 10px 18px; cursor: pointer; border-radius: 10px 10px 0 0;
+      border: 1px solid transparent; border-bottom: none;
+      transition: all 0.2s; position: relative; bottom: -1px;
+    }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active {
+      color: var(--accent); background: var(--surface);
+      border-color: var(--border); border-bottom-color: var(--surface);
+    }
+    .tab-page { display: none; }
+    .tab-page.active { display: block; }
+
+    /* TEAM PAGE */
+    .team-page { padding: 56px 0 0; animation: fadeUp 0.5s ease both; }
+    .team-intro { margin-bottom: 52px; }
+    .team-intro h2 { font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; letter-spacing: -0.03em; margin-bottom: 14px; }
+    .team-intro h2 span { color: var(--accent); }
+    .team-intro p { color: var(--muted); font-size: 1rem; line-height: 1.7; max-width: 580px; }
+    .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    @media (max-width: 720px) { .team-grid { grid-template-columns: 1fr; } }
+    .team-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px 28px; text-align: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .team-card:hover { transform: translateY(-6px); box-shadow: 0 16px 48px rgba(0,0,0,0.4); }
+    .team-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .team-card:nth-child(1)::before { background: var(--accent); }
+    .team-card:nth-child(2)::before { background: var(--accent2); }
+    .team-card:nth-child(3)::before { background: var(--accent3); }
+    .team-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 1.8rem; font-weight: 800;
+      margin: 0 auto 20px; border: 2px solid var(--border);
+      position: relative;
+    }
+    .team-card:nth-child(1) .team-avatar { background: rgba(0,229,160,0.1); color: var(--accent); border-color: rgba(0,229,160,0.3); }
+    .team-card:nth-child(2) .team-avatar { background: rgba(123,94,167,0.1); color: var(--accent2); border-color: rgba(123,94,167,0.3); }
+    .team-card:nth-child(3) .team-avatar { background: rgba(247,201,72,0.1); color: var(--accent3); border-color: rgba(247,201,72,0.3); }
+    .team-name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+    .team-role { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; }
+    .team-card:nth-child(1) .team-role { color: var(--accent); }
+    .team-card:nth-child(2) .team-role { color: var(--accent2); }
+    .team-card:nth-child(3) .team-role { color: var(--accent3); }
+    .team-bio { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+    .team-divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .team-skill-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .team-skill { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+    .project-banner {
+      margin-top: 52px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 20px; padding: 36px; text-align: center;
+      background-image: linear-gradient(135deg, rgba(0,229,160,0.04), rgba(123,94,167,0.04));
+    }
+    .project-banner h3 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; margin-bottom: 10px; }
+    .project-banner h3 span { color: var(--accent); }
+    .project-banner p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; max-width: 500px; margin: 0 auto; }
+    .built-with { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+    .built-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; color: var(--text); font-weight: 500; }
+  </style>
+</head>
+<body>
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+<div class="wrapper">
+
+  <!-- LANGUAGE SWITCHER -->
+  <div class="lang-bar" id="langBar"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <div class="logo">Budget<span>Viz</span></div>
+      <p style="color:var(--muted);font-size:0.8rem;margin-top:4px;" data-i18n="headerSubtitle"></p>
+    </div>
+    <div class="tagline" data-i18n="tagline"></div>
+  </header>
+
+  <!-- NAV TABS -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('budget')">📊 Budget Calculator</button>
+    <button class="nav-tab" onclick="switchTab('team')">👥 Meet the Team</button>
+  </div>
+
+  <!-- BUDGET TAB -->
+  <div class="tab-page active" id="tab-budget">
+
+  <!-- HERO DESCRIPTION -->
+  <div class="hero">
+    <div class="hero-badge" data-i18n="heroBadge"></div>
+    <h1 data-i18n-html="heroTitle"></h1>
+    <p data-i18n="heroDesc"></p>
+    <div class="how-it-works">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title" data-i18n="step1Title"></div>
+        <div class="step-desc" data-i18n="step1Desc"></div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title" data-i18n="step2Title"></div>
+        <div class="step-desc" data-i18n="step2Desc"></div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title" data-i18n="step3Title"></div>
+        <div class="step-desc" data-i18n="step3Desc"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGET CALCULATOR -->
+  <div class="main-grid">
+    <div>
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-title" data-i18n="incomeCardTitle"></div>
+        <div class="input-group">
+          <label data-i18n="incomeLabel"></label>
+          <input type="number" id="income" data-i18n-placeholder="incomePlaceholder" min="0" />
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" data-i18n="expensesCardTitle"></div>
+        <div class="expense-list" id="expenseList"></div>
+        <button class="btn-add" onclick="addExpense()" data-i18n="addExpenseBtn"></button>
+        <button class="btn-calculate" onclick="calculate()" data-i18n="calculateBtn"></button>
+      </div>
+    </div>
+    <div class="results-card">
+      <div class="card">
+        <div class="card-title" data-i18n="breakdownCardTitle"></div>
+        <div class="empty-state" id="emptyState" data-i18n-html="emptyState"></div>
+        <div id="resultsContent" style="display:none;">
+          <div class="stats-grid" style="margin-bottom:18px;">
+            <div class="stat-box"><div class="stat-label" data-i18n="statIncomeLbl"></div><div class="stat-value income" id="statIncome">$0</div></div>
+            <div class="stat-box"><div class="stat-label" data-i18n="statExpensesLbl"></div><div class="stat-value expenses" id="statExpenses">$0</div></div>
+            <div class="stat-box"><div class="stat-label" data-i18n="statRemainingLbl"></div><div class="stat-value savings" id="statSavings">$0</div></div>
+            <div class="stat-box"><div class="stat-label" data-i18n="statSavingsRateLbl"></div><div class="stat-value rate" id="statRate">0%</div></div>
+          </div>
+          <div class="chart-wrap" style="margin-bottom:18px;">
+            <canvas id="donutChart" width="190" height="190"></canvas>
+            <div class="chart-center">
+              <div class="chart-center-label" data-i18n="chartCenterLabel"></div>
+              <div class="chart-center-value" id="chartCenterVal">0%</div>
+            </div>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div class="card-title" style="margin-bottom:14px;" data-i18n="spendingByCatTitle"></div>
+          <div class="bar-chart" id="barChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATIONS SECTION -->
+  <div id="recoSection" style="display:none;" class="reco-section">
+    <div class="section-divider" style="margin-top:0;margin-bottom:28px;">
+      <div class="section-divider-line"></div>
+      <div class="section-divider-label" data-i18n="recoSectionLabel"></div>
+      <div class="section-divider-line"></div>
+    </div>
+    <div id="recoHealthBadge" style="margin-bottom:16px;"></div>
+    <div class="reco-grid" id="recoGrid"></div>
+    <div class="ai-reco-card" id="aiRecoCard" style="display:none;">
+      <div class="ai-reco-title" data-i18n="aiRecoTitle"></div>
+      <div class="ai-reco-body" id="aiRecoBody"></div>
+    </div>
+    <div class="reco-loading" id="recoLoading" style="display:none;">
+      <div class="typing-indicator"><span></span><span></span><span></span></div>
+      <span class="reco-loading-text" data-i18n="recoLoadingText"></span>
+    </div>
+  </div>
+
+  <!-- AI SECTION -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label" data-i18n="aiSectionLabel"></div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="ai-header">
+    <h2 data-i18n-html="aiTitle"></h2>
+    <p data-i18n="aiDesc"></p>
+  </div>
+
+  <div class="ai-quick-prompts" id="quickPrompts"></div>
+
+  <div class="chat-window">
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg assistant">
+        <div class="msg-avatar">AI</div>
+        <div class="msg-bubble" id="welcomeMsg"></div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" data-i18n-placeholder="chatPlaceholder" onkeydown="handleKey(event)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()" data-i18n="sendBtn"></button>
+    </div>
+  </div>
+
+  </div><!-- end tab-budget -->
+
+  <!-- TEAM TAB -->
+  <div class="tab-page" id="tab-team">
+    <div class="team-page">
+      <div class="team-intro">
+        <h2>Meet the <span>Team</span></h2>
+        <p>BudgetViz was built by three passionate web development students with a shared goal: make personal finance simple, visual, and accessible to everyone.</p>
+      </div>
+      <div class="team-grid">
+
+        <!-- Julian -->
+        <div class="team-card">
+          <div class="team-avatar">JC</div>
+          <div class="team-name">Julian Ciancio</div>
+          <div class="team-role">Co-Founder &amp; Lead Developer</div>
+          <div class="team-bio">Julian drove the architecture and interactive visualizations behind BudgetViz, turning complex financial data into clean, intuitive charts.</div>
+          <div class="team-divider"></div>
+          <div class="team-skill-list">
+            <span class="team-skill">JavaScript</span>
+            <span class="team-skill">Data Visualization</span>
+            <span class="team-skill">UI Design</span>
+          </div>
+        </div>
+
+        <!-- Ralph -->
+        <div class="team-card">
+          <div class="team-avatar">RP</div>
+          <div class="team-name">Ralph Portes</div>
+          <div class="team-role">Co-Founder &amp; Frontend Engineer</div>
+          <div class="team-bio">Ralph crafted the user experience and responsive layout, ensuring BudgetViz feels fast and polished on every device.</div>
+          <div class="team-divider"></div>
+          <div class="team-skill-list">
+            <span class="team-skill">HTML &amp; CSS</span>
+            <span class="team-skill">Responsive Design</span>
+            <span class="team-skill">UX</span>
+          </div>
+        </div>
+
+        <!-- Aka -->
+        <div class="team-card">
+          <div class="team-avatar">AI</div>
+          <div class="team-name">Aka Ibeawuchi</div>
+          <div class="team-role">Co-Founder &amp; AI Integration</div>
+          <div class="team-bio">Aka built the AI-powered features — from the smart recommendation engine to the multi-language financial assistant — bringing intelligence to your budget.</div>
+          <div class="team-divider"></div>
+          <div class="team-skill-list">
+            <span class="team-skill">AI &amp; APIs</span>
+            <span class="team-skill">i18n</span>
+            <span class="team-skill">Backend Logic</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="project-banner">
+        <h3>Built with <span>BudgetViz</span></h3>
+        <p>A Web Development term project — designed from scratch to help people take control of their finances through data visualization and AI-powered insights.</p>
+        <div class="built-with">
+          <span class="built-chip">HTML5</span>
+          <span class="built-chip">CSS3</span>
+          <span class="built-chip">Vanilla JS</span>
+          <span class="built-chip">Claude AI API</span>
+          <span class="built-chip">Canvas API</span>
+          <span class="built-chip">6 Languages</span>
+        </div>
+      </div>
+    </div>
+  </div><!-- end tab-team -->
+
+</div>
+
+<script>
+// ── TRANSLATIONS ──────────────────────────────────────────────────────────────
+const TRANSLATIONS = {
+  en: {
+    langName: 'English',
+    flag: '🇺🇸',
+    headerSubtitle: 'Track your money. See where it goes.',
+    tagline: 'Web Dev Term Project — 2025',
+    heroBadge: 'What is BudgetViz?',
+    heroTitle: `Most people don't know<br>where their <em>money goes.</em>`,
+    heroDesc: 'BudgetViz is a free, browser-based budget calculator. Enter your monthly income, add your expenses, and instantly see a visual breakdown of your spending — no account needed, no app to download. Just open it and start budgeting.',
+    step1Title: 'Enter Your Income',
+    step1Desc: 'Type in your total monthly income — salary, side hustle, whatever comes in each month.',
+    step2Title: 'Add Your Expenses',
+    step2Desc: 'Add categories like Rent, Food, and Transportation with their monthly dollar amounts.',
+    step3Title: 'See Your Breakdown',
+    step3Desc: 'Instantly see a donut chart, bar chart, and your savings rate — all calculated in real time.',
+    incomeCardTitle: 'Monthly Income',
+    incomeLabel: 'Total Monthly Income ($)',
+    incomePlaceholder: 'e.g. 3500',
+    expensesCardTitle: 'Expenses',
+    addExpenseBtn: '+ Add Expense Category',
+    calculateBtn: 'Calculate My Budget →',
+    breakdownCardTitle: 'Budget Breakdown',
+    emptyState: 'Enter your income and expenses,<br>then hit Calculate.',
+    statIncomeLbl: 'Income',
+    statExpensesLbl: 'Total Expenses',
+    statRemainingLbl: 'Remaining',
+    statSavingsRateLbl: 'Savings Rate',
+    chartCenterLabel: 'Spent',
+    spendingByCatTitle: 'Spending by Category',
+    aiSectionLabel: 'AI Money Assistant',
+    aiTitle: `Get <span>Personalized Advice</span>`,
+    aiDesc: 'Not sure how to save more or make extra money? Ask our AI assistant for personalized tips on budgeting, saving strategies, and ways to grow your income.',
+    chatPlaceholder: 'Ask me about saving money, side hustles, budgeting tips...',
+    sendBtn: 'Send →',
+    welcomeMsg: `Hey! 👋 I'm your personal money assistant. Ask me anything about saving money, making more income, budgeting strategies, or how to reach your financial goals. I'm here to help!`,
+    quickPrompts: [
+      { emoji: '💰', label: 'How do I save more?', prompt: 'How can I save more money each month?' },
+      { emoji: '💼', label: 'Side hustle ideas', prompt: 'What are some good side hustles to make extra money?' },
+      { emoji: '🛡️', label: 'Emergency fund tips', prompt: 'How do I build an emergency fund from scratch?' },
+      { emoji: '📊', label: '50/30/20 rule', prompt: 'What is the 50/30/20 budgeting rule?' },
+      { emoji: '🛒', label: 'Cut grocery costs', prompt: 'How do I stop overspending on food and groceries?' },
+      { emoji: '📈', label: 'Investing basics', prompt: 'What are beginner ways to invest and grow my money?' },
+    ],
+    expensePlaceholderName: 'e.g. Rent, Food…',
+    defaultExpenses: [
+      { name: 'Rent / Housing', amount: 1200 },
+      { name: 'Food & Groceries', amount: 400 },
+      { name: 'Transportation', amount: 200 },
+      { name: 'Utilities', amount: 150 },
+    ],
+    unnamed: 'Unnamed',
+    recoSectionLabel: 'Smart Recommendations',
+    aiRecoTitle: 'AI Deep-Dive Analysis',
+    recoLoadingText: 'Analyzing your budget with AI…',
+    healthGood: '✅ Budget Health: Strong',
+    healthWarn: '⚠️ Budget Health: Needs Attention',
+    healthDanger: '🚨 Budget Health: Critical',
+    aiSystemPrompt: `You are a friendly personal finance assistant inside BudgetViz, a budget calculator app. Help users save more money and earn more income. Give practical, concise advice using short paragraphs or bullet points. Be encouraging and realistic. Do not give advice that requires a licensed financial advisor.`,
+    aiRecoSystemPrompt: `You are a sharp, empathetic personal finance coach inside BudgetViz. The user has just submitted their budget. Analyze it deeply and give 3-5 specific, actionable recommendations. Reference their actual numbers (income, expenses, categories). Use plain text with line breaks — no markdown headers, no asterisks, no bullet symbols. Separate each recommendation with a blank line. Start each one with a relevant emoji. Be direct, encouraging, and practical. Do not recommend consulting a licensed advisor.`,
+  },
+
+  es: {
+    langName: 'Español',
+    flag: '🇪🇸',
+    headerSubtitle: 'Controla tu dinero. Ve en qué lo gastas.',
+    tagline: 'Proyecto Web — 2025',
+    heroBadge: '¿Qué es BudgetViz?',
+    heroTitle: `La mayoría no sabe<br>en qué se va su <em>dinero.</em>`,
+    heroDesc: 'BudgetViz es una calculadora de presupuesto gratuita y basada en el navegador. Ingresa tus ingresos mensuales, agrega tus gastos y ve al instante un desglose visual de tu gasto — sin cuenta, sin descargas.',
+    step1Title: 'Ingresa tus Ingresos',
+    step1Desc: 'Escribe tu ingreso mensual total — salario, trabajo extra, lo que sea que entre cada mes.',
+    step2Title: 'Agrega tus Gastos',
+    step2Desc: 'Añade categorías como Alquiler, Comida y Transporte con sus montos mensuales.',
+    step3Title: 'Ve tu Desglose',
+    step3Desc: 'Ve al instante un gráfico de rosca, gráfico de barras y tu tasa de ahorro — todo en tiempo real.',
+    incomeCardTitle: 'Ingresos Mensuales',
+    incomeLabel: 'Ingreso Mensual Total ($)',
+    incomePlaceholder: 'ej. 3500',
+    expensesCardTitle: 'Gastos',
+    addExpenseBtn: '+ Agregar Categoría de Gasto',
+    calculateBtn: 'Calcular mi Presupuesto →',
+    breakdownCardTitle: 'Desglose del Presupuesto',
+    emptyState: 'Ingresa tus ingresos y gastos,<br>luego presiona Calcular.',
+    statIncomeLbl: 'Ingresos',
+    statExpensesLbl: 'Gastos Totales',
+    statRemainingLbl: 'Restante',
+    statSavingsRateLbl: 'Tasa de Ahorro',
+    chartCenterLabel: 'Gastado',
+    spendingByCatTitle: 'Gasto por Categoría',
+    aiSectionLabel: 'Asistente de Dinero IA',
+    aiTitle: `Obtén <span>Consejos Personalizados</span>`,
+    aiDesc: '¿No sabes cómo ahorrar más o ganar dinero extra? Pregúntale a nuestro asistente de IA consejos personalizados sobre presupuestos, estrategias de ahorro y formas de aumentar tus ingresos.',
+    chatPlaceholder: 'Pregúntame sobre ahorros, trabajos extra, consejos de presupuesto...',
+    sendBtn: 'Enviar →',
+    welcomeMsg: `¡Hola! 👋 Soy tu asistente personal de finanzas. Pregúntame lo que quieras sobre ahorrar dinero, aumentar ingresos, estrategias de presupuesto o cómo alcanzar tus metas financieras. ¡Estoy aquí para ayudarte!`,
+    quickPrompts: [
+      { emoji: '💰', label: '¿Cómo ahorro más?', prompt: '¿Cómo puedo ahorrar más dinero cada mes?' },
+      { emoji: '💼', label: 'Ideas de negocio extra', prompt: '¿Cuáles son buenos trabajos extra para ganar dinero?' },
+      { emoji: '🛡️', label: 'Fondo de emergencia', prompt: '¿Cómo creo un fondo de emergencia desde cero?' },
+      { emoji: '📊', label: 'Regla 50/30/20', prompt: '¿Qué es la regla de presupuesto 50/30/20?' },
+      { emoji: '🛒', label: 'Reducir gastos de comida', prompt: '¿Cómo dejo de gastar de más en comida?' },
+      { emoji: '📈', label: 'Bases de inversión', prompt: '¿Cuáles son formas básicas de invertir y hacer crecer mi dinero?' },
+    ],
+    expensePlaceholderName: 'ej. Alquiler, Comida…',
+    defaultExpenses: [
+      { name: 'Alquiler / Vivienda', amount: 1200 },
+      { name: 'Comida y Supermercado', amount: 400 },
+      { name: 'Transporte', amount: 200 },
+      { name: 'Servicios Públicos', amount: 150 },
+    ],
+    unnamed: 'Sin nombre',
+    recoSectionLabel: 'Recomendaciones Inteligentes',
+    aiRecoTitle: 'Análisis Profundo de IA',
+    recoLoadingText: 'Analizando tu presupuesto con IA…',
+    healthGood: '✅ Salud Financiera: Sólida',
+    healthWarn: '⚠️ Salud Financiera: Necesita Atención',
+    healthDanger: '🚨 Salud Financiera: Crítica',
+    aiSystemPrompt: `Eres un asistente amigable de finanzas personales dentro de BudgetViz. Ayuda a los usuarios a ahorrar más dinero y ganar más ingresos. Da consejos prácticos y concisos usando párrafos cortos o viñetas. Sé alentador y realista. Responde siempre en español.`,
+    aiRecoSystemPrompt: `Eres un coach de finanzas personales empático dentro de BudgetViz. El usuario acaba de enviar su presupuesto. Analízalo en profundidad y da 3-5 recomendaciones específicas y accionables. Menciona sus números reales. Usa texto plano con saltos de línea. Empieza cada recomendación con un emoji relevante. Sé directo, alentador y práctico. Responde siempre en español.`,
+  },
+
+  fr: {
+    langName: 'Français',
+    flag: '🇫🇷',
+    headerSubtitle: 'Suivez votre argent. Voyez où il va.',
+    tagline: 'Projet Web — 2025',
+    heroBadge: 'Qu\'est-ce que BudgetViz ?',
+    heroTitle: `La plupart des gens ne savent pas<br>où va leur <em>argent.</em>`,
+    heroDesc: 'BudgetViz est un calculateur de budget gratuit basé sur navigateur. Entrez vos revenus mensuels, ajoutez vos dépenses, et voyez instantanément une répartition visuelle de vos dépenses — sans compte, sans téléchargement.',
+    step1Title: 'Entrez vos Revenus',
+    step1Desc: 'Saisissez votre revenu mensuel total — salaire, activités secondaires, tout ce qui rentre chaque mois.',
+    step2Title: 'Ajoutez vos Dépenses',
+    step2Desc: 'Ajoutez des catégories comme Loyer, Nourriture et Transport avec leurs montants mensuels.',
+    step3Title: 'Consultez votre Bilan',
+    step3Desc: 'Voyez instantanément un graphique en anneau, un diagramme en barres et votre taux d\'épargne — tout calculé en temps réel.',
+    incomeCardTitle: 'Revenus Mensuels',
+    incomeLabel: 'Revenu Mensuel Total ($)',
+    incomePlaceholder: 'ex. 3500',
+    expensesCardTitle: 'Dépenses',
+    addExpenseBtn: '+ Ajouter une Catégorie de Dépense',
+    calculateBtn: 'Calculer mon Budget →',
+    breakdownCardTitle: 'Répartition du Budget',
+    emptyState: 'Entrez vos revenus et dépenses,<br>puis cliquez sur Calculer.',
+    statIncomeLbl: 'Revenus',
+    statExpensesLbl: 'Dépenses Totales',
+    statRemainingLbl: 'Restant',
+    statSavingsRateLbl: 'Taux d\'Épargne',
+    chartCenterLabel: 'Dépensé',
+    spendingByCatTitle: 'Dépenses par Catégorie',
+    aiSectionLabel: 'Assistant Financier IA',
+    aiTitle: `Obtenez des <span>Conseils Personnalisés</span>`,
+    aiDesc: 'Pas sûr de comment économiser plus ou gagner de l\'argent supplémentaire ? Demandez à notre assistant IA des conseils personnalisés sur la budgétisation, les stratégies d\'épargne et les moyens d\'augmenter vos revenus.',
+    chatPlaceholder: 'Posez-moi des questions sur l\'épargne, les revenus supplémentaires, la budgétisation...',
+    sendBtn: 'Envoyer →',
+    welcomeMsg: `Bonjour ! 👋 Je suis votre assistant financier personnel. Posez-moi toutes vos questions sur l'épargne, l'augmentation de revenus, les stratégies de budget ou comment atteindre vos objectifs financiers. Je suis là pour vous aider !`,
+    quickPrompts: [
+      { emoji: '💰', label: 'Comment épargner plus ?', prompt: 'Comment puis-je économiser plus d\'argent chaque mois ?' },
+      { emoji: '💼', label: 'Idées de revenus extra', prompt: 'Quelles sont de bonnes activités secondaires pour gagner de l\'argent ?' },
+      { emoji: '🛡️', label: 'Fonds d\'urgence', prompt: 'Comment constituer un fonds d\'urgence de zéro ?' },
+      { emoji: '📊', label: 'Règle 50/30/20', prompt: 'Qu\'est-ce que la règle budgétaire 50/30/20 ?' },
+      { emoji: '🛒', label: 'Réduire les courses', prompt: 'Comment arrêter de trop dépenser pour la nourriture ?' },
+      { emoji: '📈', label: 'Bases de l\'investissement', prompt: 'Quelles sont les façons simples d\'investir et faire fructifier son argent ?' },
+    ],
+    expensePlaceholderName: 'ex. Loyer, Nourriture…',
+    defaultExpenses: [
+      { name: 'Loyer / Logement', amount: 1200 },
+      { name: 'Nourriture & Courses', amount: 400 },
+      { name: 'Transport', amount: 200 },
+      { name: 'Charges', amount: 150 },
+    ],
+    unnamed: 'Sans nom',
+    recoSectionLabel: 'Recommandations Intelligentes',
+    aiRecoTitle: 'Analyse Approfondie IA',
+    recoLoadingText: 'Analyse de votre budget en cours…',
+    healthGood: '✅ Santé Budgétaire : Solide',
+    healthWarn: '⚠️ Santé Budgétaire : À Améliorer',
+    healthDanger: '🚨 Santé Budgétaire : Critique',
+    aiSystemPrompt: `Vous êtes un assistant amical en finances personnelles dans BudgetViz. Aidez les utilisateurs à économiser plus et à gagner plus de revenus. Donnez des conseils pratiques et concis en courts paragraphes ou listes. Soyez encourageant et réaliste. Répondez toujours en français.`,
+    aiRecoSystemPrompt: `Vous êtes un coach de finances personnelles empathique dans BudgetViz. L'utilisateur vient de soumettre son budget. Analysez-le en profondeur et donnez 3-5 recommandations spécifiques et actionnables. Référencez ses vrais chiffres. Utilisez du texte brut avec des sauts de ligne. Commencez chaque recommandation par un emoji pertinent. Soyez direct, encourageant et pratique. Répondez toujours en français.`,
+  },
+
+  de: {
+    langName: 'Deutsch',
+    flag: '🇩🇪',
+    headerSubtitle: 'Verfolge dein Geld. Sieh, wohin es geht.',
+    tagline: 'Webprojekt — 2025',
+    heroBadge: 'Was ist BudgetViz?',
+    heroTitle: `Die meisten wissen nicht,<br>wohin ihr <em>Geld fließt.</em>`,
+    heroDesc: 'BudgetViz ist ein kostenloser, browserbasierter Budgetrechner. Gib dein monatliches Einkommen ein, füge deine Ausgaben hinzu und sieh sofort eine visuelle Aufschlüsselung — kein Konto nötig, keine App-Downloads.',
+    step1Title: 'Einkommen eingeben',
+    step1Desc: 'Gib dein gesamtes monatliches Einkommen ein — Gehalt, Nebenjobs, alles was monatlich reinkommt.',
+    step2Title: 'Ausgaben hinzufügen',
+    step2Desc: 'Füge Kategorien wie Miete, Lebensmittel und Transport mit ihren monatlichen Beträgen hinzu.',
+    step3Title: 'Auswertung ansehen',
+    step3Desc: 'Sieh sofort ein Donut-Diagramm, Balkendiagramm und deine Sparquote — alles in Echtzeit berechnet.',
+    incomeCardTitle: 'Monatliches Einkommen',
+    incomeLabel: 'Gesamtes Monatseinkommen ($)',
+    incomePlaceholder: 'z.B. 3500',
+    expensesCardTitle: 'Ausgaben',
+    addExpenseBtn: '+ Ausgabenkategorie hinzufügen',
+    calculateBtn: 'Budget berechnen →',
+    breakdownCardTitle: 'Budget-Auswertung',
+    emptyState: 'Einkommen und Ausgaben eingeben,<br>dann Berechnen klicken.',
+    statIncomeLbl: 'Einkommen',
+    statExpensesLbl: 'Gesamtausgaben',
+    statRemainingLbl: 'Verbleibend',
+    statSavingsRateLbl: 'Sparquote',
+    chartCenterLabel: 'Ausgegeben',
+    spendingByCatTitle: 'Ausgaben nach Kategorie',
+    aiSectionLabel: 'KI-Finanzassistent',
+    aiTitle: `Hol dir <span>Personalisierte Tipps</span>`,
+    aiDesc: 'Nicht sicher, wie du mehr sparen oder mehr verdienen kannst? Frage unseren KI-Assistenten nach personalisierten Tipps zu Budgetierung, Sparstrategien und Möglichkeiten, dein Einkommen zu steigern.',
+    chatPlaceholder: 'Frag mich über Sparen, Nebenverdienste, Budgettipps...',
+    sendBtn: 'Senden →',
+    welcomeMsg: `Hallo! 👋 Ich bin dein persönlicher Finanzassistent. Frag mich alles über Geldsparen, Einkommenssteigerung, Budgetierungsstrategien oder wie du deine finanziellen Ziele erreichst. Ich bin hier, um dir zu helfen!`,
+    quickPrompts: [
+      { emoji: '💰', label: 'Wie spare ich mehr?', prompt: 'Wie kann ich jeden Monat mehr Geld sparen?' },
+      { emoji: '💼', label: 'Nebenjob-Ideen', prompt: 'Was sind gute Nebenjobs, um extra Geld zu verdienen?' },
+      { emoji: '🛡️', label: 'Notfallfonds aufbauen', prompt: 'Wie baue ich einen Notfallfonds von null auf?' },
+      { emoji: '📊', label: '50/30/20-Regel', prompt: 'Was ist die 50/30/20-Budgetregel?' },
+      { emoji: '🛒', label: 'Lebensmittelkosten senken', prompt: 'Wie höre ich auf, zu viel für Lebensmittel auszugeben?' },
+      { emoji: '📈', label: 'Grundlagen des Investierens', prompt: 'Was sind einfache Möglichkeiten, Geld zu investieren?' },
+    ],
+    expensePlaceholderName: 'z.B. Miete, Essen…',
+    defaultExpenses: [
+      { name: 'Miete / Wohnen', amount: 1200 },
+      { name: 'Lebensmittel', amount: 400 },
+      { name: 'Transport', amount: 200 },
+      { name: 'Nebenkosten', amount: 150 },
+    ],
+    unnamed: 'Unbenannt',
+    recoSectionLabel: 'Smarte Empfehlungen',
+    aiRecoTitle: 'KI-Tiefenanalyse',
+    recoLoadingText: 'Budget-Analyse läuft…',
+    healthGood: '✅ Budget-Gesundheit: Stark',
+    healthWarn: '⚠️ Budget-Gesundheit: Verbesserungsbedarf',
+    healthDanger: '🚨 Budget-Gesundheit: Kritisch',
+    aiSystemPrompt: `Du bist ein freundlicher Finanzassistent in BudgetViz. Hilf Nutzern dabei, mehr zu sparen und mehr zu verdienen. Gib praktische, knappe Tipps in kurzen Absätzen oder Stichpunkten. Sei ermutigend und realistisch. Antworte immer auf Deutsch.`,
+    aiRecoSystemPrompt: `Du bist ein einfühlsamer Finanzcoach in BudgetViz. Der Nutzer hat soeben sein Budget eingereicht. Analysiere es gründlich und gib 3-5 spezifische, umsetzbare Empfehlungen. Beziehe dich auf die tatsächlichen Zahlen. Nutze reinen Text mit Zeilenumbrüchen. Beginne jede Empfehlung mit einem passenden Emoji. Sei direkt, ermutigend und praktisch. Antworte immer auf Deutsch.`,
+  },
+
+  pt: {
+    langName: 'Português',
+    flag: '🇧🇷',
+    headerSubtitle: 'Acompanhe seu dinheiro. Veja onde ele vai.',
+    tagline: 'Projeto Web — 2025',
+    heroBadge: 'O que é o BudgetViz?',
+    heroTitle: `A maioria das pessoas não sabe<br>para onde vai seu <em>dinheiro.</em>`,
+    heroDesc: 'BudgetViz é uma calculadora de orçamento gratuita e baseada no navegador. Insira sua renda mensal, adicione suas despesas e veja instantaneamente um detalhamento visual dos seus gastos — sem conta necessária, sem download.',
+    step1Title: 'Insira sua Renda',
+    step1Desc: 'Digite sua renda mensal total — salário, renda extra, tudo que entra a cada mês.',
+    step2Title: 'Adicione suas Despesas',
+    step2Desc: 'Adicione categorias como Aluguel, Alimentação e Transporte com seus valores mensais.',
+    step3Title: 'Veja seu Relatório',
+    step3Desc: 'Veja instantaneamente um gráfico de rosca, gráfico de barras e sua taxa de poupança — tudo em tempo real.',
+    incomeCardTitle: 'Renda Mensal',
+    incomeLabel: 'Renda Mensal Total ($)',
+    incomePlaceholder: 'ex. 3500',
+    expensesCardTitle: 'Despesas',
+    addExpenseBtn: '+ Adicionar Categoria de Despesa',
+    calculateBtn: 'Calcular meu Orçamento →',
+    breakdownCardTitle: 'Detalhamento do Orçamento',
+    emptyState: 'Insira sua renda e despesas,<br>depois clique em Calcular.',
+    statIncomeLbl: 'Renda',
+    statExpensesLbl: 'Total de Despesas',
+    statRemainingLbl: 'Restante',
+    statSavingsRateLbl: 'Taxa de Poupança',
+    chartCenterLabel: 'Gasto',
+    spendingByCatTitle: 'Gastos por Categoria',
+    aiSectionLabel: 'Assistente Financeiro IA',
+    aiTitle: `Obtenha <span>Conselhos Personalizados</span>`,
+    aiDesc: 'Não sabe como poupar mais ou ganhar dinheiro extra? Pergunte ao nosso assistente de IA por dicas personalizadas sobre orçamento, estratégias de poupança e formas de aumentar sua renda.',
+    chatPlaceholder: 'Pergunte sobre poupança, renda extra, dicas de orçamento...',
+    sendBtn: 'Enviar →',
+    welcomeMsg: `Olá! 👋 Sou seu assistente financeiro pessoal. Pergunte qualquer coisa sobre poupar dinheiro, aumentar a renda, estratégias de orçamento ou como alcançar suas metas financeiras. Estou aqui para ajudar!`,
+    quickPrompts: [
+      { emoji: '💰', label: 'Como poupar mais?', prompt: 'Como posso poupar mais dinheiro todo mês?' },
+      { emoji: '💼', label: 'Ideias de renda extra', prompt: 'Quais são boas fontes de renda extra?' },
+      { emoji: '🛡️', label: 'Fundo de emergência', prompt: 'Como criar um fundo de emergência do zero?' },
+      { emoji: '📊', label: 'Regra 50/30/20', prompt: 'O que é a regra de orçamento 50/30/20?' },
+      { emoji: '🛒', label: 'Reduzir gastos com comida', prompt: 'Como parar de gastar demais com alimentação?' },
+      { emoji: '📈', label: 'Investimentos básicos', prompt: 'Quais são formas simples de investir e fazer o dinheiro crescer?' },
+    ],
+    expensePlaceholderName: 'ex. Aluguel, Comida…',
+    defaultExpenses: [
+      { name: 'Aluguel / Moradia', amount: 1200 },
+      { name: 'Alimentação', amount: 400 },
+      { name: 'Transporte', amount: 200 },
+      { name: 'Contas', amount: 150 },
+    ],
+    unnamed: 'Sem nome',
+    recoSectionLabel: 'Recomendações Inteligentes',
+    aiRecoTitle: 'Análise Profunda de IA',
+    recoLoadingText: 'Analisando seu orçamento com IA…',
+    healthGood: '✅ Saúde Financeira: Forte',
+    healthWarn: '⚠️ Saúde Financeira: Precisa de Atenção',
+    healthDanger: '🚨 Saúde Financeira: Crítica',
+    aiSystemPrompt: `Você é um assistente amigável de finanças pessoais no BudgetViz. Ajude os usuários a poupar mais dinheiro e ganhar mais renda. Dê conselhos práticos e concisos usando parágrafos curtos ou listas. Seja encorajador e realista. Responda sempre em português.`,
+    aiRecoSystemPrompt: `Você é um coach de finanças pessoais empático no BudgetViz. O usuário acabou de enviar seu orçamento. Analise-o em profundidade e dê 3-5 recomendações específicas e acionáveis. Mencione os números reais do usuário. Use texto simples com quebras de linha. Comece cada recomendação com um emoji relevante. Seja direto, encorajador e prático. Responda sempre em português.`,
+  },
+
+  zh: {
+    langName: '中文',
+    flag: '🇨🇳',
+    headerSubtitle: '追踪您的金钱，了解它的去向。',
+    tagline: '网页开发项目 — 2025',
+    heroBadge: '什么是 BudgetViz？',
+    heroTitle: `大多数人不知道<br>他们的<em>钱去了哪里。</em>`,
+    heroDesc: 'BudgetViz 是一款免费的浏览器预算计算器。输入您的月收入，添加您的支出，立即查看支出的可视化明细 — 无需注册账户，无需下载应用。',
+    step1Title: '输入您的收入',
+    step1Desc: '输入您的月总收入 — 工资、副业收入，每月进账的一切。',
+    step2Title: '添加您的支出',
+    step2Desc: '添加租金、餐饮、交通等类别及其月度金额。',
+    step3Title: '查看您的明细',
+    step3Desc: '立即查看环形图、条形图和您的储蓄率 — 全部实时计算。',
+    incomeCardTitle: '月收入',
+    incomeLabel: '月总收入 ($)',
+    incomePlaceholder: '例如 3500',
+    expensesCardTitle: '支出',
+    addExpenseBtn: '+ 添加支出类别',
+    calculateBtn: '计算我的预算 →',
+    breakdownCardTitle: '预算明细',
+    emptyState: '输入收入和支出，<br>然后点击计算。',
+    statIncomeLbl: '收入',
+    statExpensesLbl: '总支出',
+    statRemainingLbl: '剩余',
+    statSavingsRateLbl: '储蓄率',
+    chartCenterLabel: '已花费',
+    spendingByCatTitle: '按类别支出',
+    aiSectionLabel: 'AI 理财助手',
+    aiTitle: `获取<span>个性化建议</span>`,
+    aiDesc: '不确定如何多存钱或增加收入？向我们的 AI 助手寻求个性化的预算建议、储蓄策略和增加收入的方法。',
+    chatPlaceholder: '问我关于存钱、副业收入、预算建议的问题...',
+    sendBtn: '发送 →',
+    welcomeMsg: `你好！👋 我是您的个人理财助手。欢迎向我咨询任何关于存钱、增加收入、预算策略或实现财务目标的问题。我在这里帮助您！`,
+    quickPrompts: [
+      { emoji: '💰', label: '如何多存钱？', prompt: '我每个月如何多存钱？' },
+      { emoji: '💼', label: '副业创收点子', prompt: '有哪些好的副业可以赚外快？' },
+      { emoji: '🛡️', label: '建立应急基金', prompt: '如何从零开始建立应急基金？' },
+      { emoji: '📊', label: '50/30/20 法则', prompt: '什么是 50/30/20 预算法则？' },
+      { emoji: '🛒', label: '减少餐饮开支', prompt: '如何减少食品和杂货方面的超支？' },
+      { emoji: '📈', label: '投资入门', prompt: '有哪些适合新手的投资方式来增长资产？' },
+    ],
+    expensePlaceholderName: '例如 租金、餐饮…',
+    defaultExpenses: [
+      { name: '租金 / 住房', amount: 1200 },
+      { name: '餐饮 & 购物', amount: 400 },
+      { name: '交通出行', amount: 200 },
+      { name: '水电费', amount: 150 },
+    ],
+    unnamed: '未命名',
+    recoSectionLabel: '智能建议',
+    aiRecoTitle: 'AI 深度分析',
+    recoLoadingText: '正在用 AI 分析您的预算…',
+    healthGood: '✅ 预算健康状况：良好',
+    healthWarn: '⚠️ 预算健康状况：需要改善',
+    healthDanger: '🚨 预算健康状况：危急',
+    aiSystemPrompt: `你是 BudgetViz 预算计算器应用中友好的个人理财助手。帮助用户节省更多金钱并增加收入。用简短段落或要点给出实用、简洁的建议。保持积极鼓励和现实态度。始终用中文回答。`,
+    aiRecoSystemPrompt: `你是 BudgetViz 中富有同理心的个人理财教练。用户刚刚提交了他们的预算。深入分析并给出3-5条具体、可操作的建议。引用用户的实际数字。使用纯文本加换行符，不用标题或星号。每条建议以相关emoji开头。保持直接、鼓励、务实的风格。始终用中文回答。`,
+  },
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let currentLang = 'en';
+const COLORS = ['#00e5a0','#f7c948','#7b5ea7','#ff5c5c','#4ea8de','#ff9f43','#a29bfe','#fd79a8','#55efc4','#fdcb6e'];
+let expenses = [];
+let chatHistory = [];
+
+// ── LANGUAGE SWITCHER ────────────────────────────────────────────────────────
+function buildLangBar() {
+  const bar = document.getElementById('langBar');
+  bar.innerHTML = '';
+  Object.entries(TRANSLATIONS).forEach(([code, t]) => {
+    const btn = document.createElement('button');
+    btn.className = 'lang-btn' + (code === currentLang ? ' active' : '');
+    btn.innerHTML = `${t.flag} ${t.langName}`;
+    btn.onclick = () => switchLang(code);
+    bar.appendChild(btn);
+  });
+}
+
+function switchLang(code) {
+  currentLang = code;
+  document.documentElement.lang = code;
+  buildLangBar();
+  applyTranslations();
+  renderExpenses();
+  buildQuickPrompts();
+  // Reset chat with welcome message in new language
+  const welcome = document.getElementById('welcomeMsg');
+  if (welcome) welcome.innerHTML = t('welcomeMsg');
+  chatHistory = [];
+}
+
+function t(key) { return TRANSLATIONS[currentLang][key] || TRANSLATIONS['en'][key] || ''; }
+
+function applyTranslations() {
+  // data-i18n: textContent
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  // data-i18n-html: innerHTML
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    el.innerHTML = t(key);
+  });
+  // data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = t(key);
+  });
+}
+
+function buildQuickPrompts() {
+  const container = document.getElementById('quickPrompts');
+  container.innerHTML = '';
+  FAQ.forEach(faq => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-btn';
+    btn.textContent = faq.question;
+    btn.onclick = () => quickPrompt(faq.question);
+    container.appendChild(btn);
+  });
+}
+
+// ── BUDGET CALCULATOR ────────────────────────────────────────────────────────
+function addExpense(name='', amount='') {
+  expenses.push({ id: Date.now()+Math.random(), name, amount, color: COLORS[expenses.length % COLORS.length] });
+  renderExpenses();
+}
+function removeExpense(id) { expenses = expenses.filter(e => e.id !== id); renderExpenses(); }
+function renderExpenses() {
+  const list = document.getElementById('expenseList');
+  list.innerHTML = '';
+  const placeholder = t('expensePlaceholderName');
+  expenses.forEach((exp, i) => {
+    const row = document.createElement('div');
+    row.className = 'expense-row';
+    row.innerHTML = `
+      <input type="text" placeholder="${placeholder}" value="${exp.name}" onchange="expenses[${i}].name=this.value"/>
+      <div style="position:relative;display:flex;align-items:center;">
+        <span style="position:absolute;left:12px;color:var(--muted);font-size:0.9rem;">$</span>
+        <input type="number" placeholder="0" value="${exp.amount}" min="0" style="padding-left:24px;" onchange="expenses[${i}].amount=this.value"/>
+      </div>
+      <button class="btn-remove" onclick="removeExpense(${exp.id})">×</button>`;
+    list.appendChild(row);
+  });
+}
+function fmt(n) { return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+function calculate() {
+  const income = parseFloat(document.getElementById('income').value)||0;
+  const validExp = expenses.filter(e => e.name && parseFloat(e.amount)>0);
+  const totalExp = validExp.reduce((s,e)=>s+parseFloat(e.amount),0);
+  const remaining = income - totalExp;
+  const rate = income>0 ? (remaining/income)*100 : 0;
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('resultsContent').style.display='block';
+  document.getElementById('statIncome').textContent=fmt(income);
+  document.getElementById('statExpenses').textContent=fmt(totalExp);
+  const savEl=document.getElementById('statSavings');
+  savEl.textContent=fmt(remaining);
+  savEl.className='stat-value savings '+(remaining>=0?'positive':'negative');
+  document.getElementById('statRate').textContent=rate.toFixed(1)+'%';
+  document.getElementById('chartCenterVal').textContent=(income>0?Math.min((totalExp/income)*100,100):0).toFixed(0)+'%';
+  drawDonut(validExp,totalExp,income,remaining);
+  buildLegendChart(validExp,totalExp);
+  buildBars(validExp,totalExp);
+  buildInstantRecos(income, totalExp, remaining, rate, validExp);
+  fetchAIRecos(income, totalExp, remaining, rate, validExp);
+}
+function drawDonut(exps,totalExp,income,remaining) {
+  const canvas=document.getElementById('donutChart'),ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H/2,r=W/2-14,inner=r*0.6;
+  let start=-Math.PI/2;
+  const segs=[...exps.map(e=>({...e,val:parseFloat(e.amount)}))];
+  if(remaining>0) segs.push({val:remaining,color:'#ffffff18'});
+  const total=segs.reduce((s,sg)=>s+sg.val,0);
+  if(!total) return;
+  segs.forEach(seg=>{
+    const slice=(seg.val/total)*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,start+slice);ctx.closePath();
+    ctx.fillStyle=seg.color;ctx.fill();start+=slice;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fillStyle='#13131a';ctx.fill();
+}
+function buildLegendChart(exps,totalExp) {
+  const legend=document.getElementById('legend');legend.innerHTML='';
+  const unnamed = t('unnamed');
+  exps.forEach(e=>{
+    const amt=parseFloat(e.amount),pct=totalExp>0?((amt/totalExp)*100).toFixed(1):0;
+    legend.innerHTML+=`<div class="legend-item"><div class="legend-left"><div class="legend-dot" style="background:${e.color}"></div><span class="legend-name">${e.name||unnamed}</span></div><span class="legend-pct" style="color:${e.color}">${pct}%</span></div>`;
+  });
+}
+function buildBars(exps,totalExp) {
+  const bars=document.getElementById('barChart');bars.innerHTML='';
+  const unnamed = t('unnamed');
+  [...exps].sort((a,b)=>parseFloat(b.amount)-parseFloat(a.amount)).forEach(e=>{
+    const amt=parseFloat(e.amount),pct=totalExp>0?(amt/totalExp)*100:0;
+    const div=document.createElement('div');div.className='bar-row';
+    div.innerHTML=`<div class="bar-label-row"><span>${e.name||unnamed}</span><span class="bar-label-amt">${fmt(amt)}</span></div><div class="bar-track"><div class="bar-fill" style="background:${e.color};width:0%" data-w="${pct.toFixed(1)}%"></div></div>`;
+    bars.appendChild(div);
+  });
+  requestAnimationFrame(()=>{ document.querySelectorAll('.bar-fill').forEach(b=>{b.style.width=b.dataset.w;}); });
+}
+
+
+// ── RECOMMENDATIONS ──────────────────────────────────────────────────────────
+function buildInstantRecos(income, totalExp, remaining, rate, exps) {
+  const section = document.getElementById('recoSection');
+  const grid = document.getElementById('recoGrid');
+  section.style.display = 'block';
+  grid.innerHTML = '';
+  applyTranslations(); // refresh data-i18n inside section
+
+  // Determine health
+  let health = rate >= 20 ? 'good' : rate >= 5 ? 'warn' : 'danger';
+  const badge = document.getElementById('recoHealthBadge');
+  badge.innerHTML = `<div class="reco-health-badge ${health}">${t('health' + health.charAt(0).toUpperCase() + health.slice(1))}</div>`;
+
+  const cards = [];
+  const housingPct = income > 0 ? (getExpenseAmount(exps, ['rent','housing','mortgage','loyer','alquiler','miete','aluguel','租金','住房']) / income) * 100 : 0;
+  const foodPct = income > 0 ? (getExpenseAmount(exps, ['food','grocer','eat','restaurant','comida','nourriture','lebensmittel','alimenta','餐饮','食品']) / income) * 100 : 0;
+  const transportPct = income > 0 ? (getExpenseAmount(exps, ['transport','car','auto','vehicle','déplace','transporte','交通']) / income) * 100 : 0;
+  const topExp = [...exps].sort((a,b) => parseFloat(b.amount)-parseFloat(a.amount))[0];
+
+  // Savings Rate card
+  if (rate >= 20) {
+    cards.push({ type:'good', icon:'🎉', title:'Excellent Savings Rate', body:`You're saving <strong>${rate.toFixed(1)}%</strong> of your income — that's above the recommended 20%. Keep it up! Consider putting that extra ${fmt(remaining)} to work in an index fund or high-yield savings account.` });
+  } else if (rate >= 10) {
+    cards.push({ type:'warn', icon:'💡', title:'Savings Rate: Room to Grow', body:`You're saving <strong>${rate.toFixed(1)}%</strong> of your income. The goal is 20%. You're <strong>${fmt(income * 0.20 - remaining)}</strong> away — try cutting one discretionary expense to close the gap.` });
+  } else if (rate >= 0) {
+    cards.push({ type:'danger', icon:'⚠️', title:'Low Savings Rate', body:`You're only saving <strong>${rate.toFixed(1)}%</strong> of your income. Aim for at least 20%. Look for one expense you can reduce by even 10% — small cuts compound fast.` });
+  } else {
+    cards.push({ type:'danger', icon:'🚨', title:'Spending Exceeds Income', body:`You're spending <strong>${fmt(Math.abs(remaining))}</strong> more than you earn. This is unsustainable. Identify your largest non-essential expense and reduce it immediately.` });
+  }
+
+  // Housing check
+  if (housingPct > 0) {
+    if (housingPct > 40) {
+      cards.push({ type:'danger', icon:'🏠', title:'Housing Cost Too High', body:`Housing is consuming <strong>${housingPct.toFixed(0)}%</strong> of your income. The recommended limit is 30%. Consider roommates, a less expensive area, or negotiating your rent at renewal.` });
+    } else if (housingPct > 30) {
+      cards.push({ type:'warn', icon:'🏠', title:'Housing Near the Limit', body:`Housing is <strong>${housingPct.toFixed(0)}%</strong> of your income — just above the 30% guideline. Watch for rent increases and keep other costs lean.` });
+    } else {
+      cards.push({ type:'good', icon:'🏠', title:'Housing Cost in Check', body:`Housing is <strong>${housingPct.toFixed(0)}%</strong> of your income — well within the 30% guideline. This gives you flexibility to save and invest more.` });
+    }
+  }
+
+  // Food check
+  if (foodPct > 15) {
+    cards.push({ type:'warn', icon:'🛒', title:'High Food Spending', body:`Food is <strong>${foodPct.toFixed(0)}%</strong> of your income. Try meal prepping on Sundays, using a grocery list, or cooking in batches — most people can cut food costs by 20-30% this way.` });
+  }
+
+  // Emergency fund check
+  const emergencyTarget = totalExp * 3;
+  if (rate < 10 || remaining < 200) {
+    cards.push({ type:'warn', icon:'🛡️', title:'Build an Emergency Fund First', body:`With limited savings, your priority should be an emergency fund of <strong>${fmt(emergencyTarget)}</strong> (3 months of expenses). Even saving <strong>${fmt(Math.max(50, remaining * 0.5))}/month</strong> gets you there in ${Math.ceil(emergencyTarget / Math.max(50, remaining * 0.5))} months.` });
+  }
+
+  // Top spending category
+  if (topExp && parseFloat(topExp.amount) > 0) {
+    const topPct = ((parseFloat(topExp.amount) / totalExp) * 100).toFixed(0);
+    if (topPct > 45) {
+      cards.push({ type:'tip', icon:'🔍', title:`"${topExp.name}" Dominates Your Budget`, body:`<strong>${topPct}%</strong> of your total expenses go to "${topExp.name}" (${fmt(topExp.amount)}). Any reduction here has the biggest impact on your budget. Even a 10% cut saves <strong>${fmt(parseFloat(topExp.amount) * 0.1)}/month</strong>.` });
+    }
+  }
+
+  // 50/30/20 check
+  if (income > 0) {
+    const needsPct = (totalExp / income) * 100;
+    if (needsPct > 70) {
+      cards.push({ type:'tip', icon:'📊', title:'Try the 50/30/20 Rule', body:`The 50/30/20 rule suggests: 50% needs, 30% wants, 20% savings. Right now your expenses are <strong>${needsPct.toFixed(0)}%</strong> of income. Categorize expenses as "needs" vs "wants" to find what's negotiable.` });
+    }
+  }
+
+  cards.slice(0, 6).forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = `reco-card ${c.type}`;
+    el.style.animationDelay = `${i * 0.08}s`;
+    el.style.animation = `fadeUp 0.5s ease both`;
+    el.innerHTML = `<div class="reco-top"><div class="reco-icon">${c.icon}</div><div class="reco-title ${c.type}">${c.title}</div></div><div class="reco-body">${c.body}</div>`;
+    grid.appendChild(el);
+  });
+}
+
+function getExpenseAmount(exps, keywords) {
+  return exps.reduce((sum, e) => {
+    const name = (e.name || '').toLowerCase();
+    if (keywords.some(k => name.includes(k))) return sum + parseFloat(e.amount || 0);
+    return sum;
+  }, 0);
+}
+
+async function fetchAIRecos(income, totalExp, remaining, rate, exps) {
+  const loadEl = document.getElementById('recoLoading');
+  const aiCard = document.getElementById('aiRecoCard');
+  const aiBody = document.getElementById('aiRecoBody');
+  loadEl.style.display = 'flex';
+  aiCard.style.display = 'none';
+
+  const expList = exps.map(e => `  - ${e.name}: ${fmt(parseFloat(e.amount))}`).join('\n');
+  const prompt = `Monthly Income: ${fmt(income)}
+Total Expenses: ${fmt(totalExp)}
+Remaining / Savings: ${fmt(remaining)} (${rate.toFixed(1)}% savings rate)
+
+Expense breakdown:
+${expList}
+
+Please give me specific, personalized recommendations based on these exact numbers.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: TRANSLATIONS[currentLang].aiRecoSystemPrompt,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || '';
+    loadEl.style.display = 'none';
+    if (reply) {
+      aiBody.textContent = reply;
+      aiCard.style.display = 'block';
+    }
+  } catch(err) {
+    loadEl.style.display = 'none';
+  }
+}
+
+function loadDefaultExpenses() {
+  expenses = [];
+  const defaults = TRANSLATIONS[currentLang].defaultExpenses;
+  defaults.forEach(d => addExpense(d.name, d.amount));
+}
+
+// ── AI CHAT ──────────────────────────────────────────────────────────────────
+function quickPrompt(text) { document.getElementById('chatInput').value=text; sendMessage(); }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+
+function appendMsg(role,text) {
+  const box=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className=`msg ${role}`;
+  const avatarText = role==='assistant' ? 'AI' : t('youLabel') || 'You';
+  div.innerHTML=`<div class="msg-avatar">${avatarText}</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  box.appendChild(div);
+  box.scrollTop=box.scrollHeight;
+}
+function showTyping() {
+  const box=document.getElementById('chatMessages');
+  const div=document.createElement('div');
+  div.className='msg assistant';div.id='typingMsg';
+  div.innerHTML=`<div class="msg-avatar">AI</div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+  box.appendChild(div);box.scrollTop=box.scrollHeight;
+}
+function removeTyping() { const t=document.getElementById('typingMsg');if(t)t.remove(); }
+
+// ── SCRIPTED FAQ CHAT ─────────────────────────────────────────────────────────
+const FAQ = [
+  {
+    question: "How can I save more money each month?",
+    answer: "Start by tracking every expense for 30 days — most people find 2-3 categories where they're surprised by how much they spend. Then apply the 24-hour rule: wait a full day before any non-essential purchase. Automate a savings transfer on payday so you save before you can spend it."
+  },
+  {
+    question: "What is the 50/30/20 rule?",
+    answer: "The 50/30/20 rule splits your take-home income into three buckets: 50% goes to needs (rent, groceries, utilities), 30% goes to wants (dining out, subscriptions, entertainment), and 20% goes to savings and debt repayment. It's a great starting framework if you've never budgeted before."
+  },
+  {
+    question: "How do I build an emergency fund?",
+    answer: "Your goal is 3–6 months of living expenses saved in a separate, easy-to-access account. Start small — even $25/week adds up to $1,300 in a year. Keep it in a high-yield savings account so it earns interest while it sits. Don't touch it unless it's a true emergency."
+  },
+  {
+    question: "What are some good side hustles?",
+    answer: "Some popular options: freelancing your existing skills on Fiverr or Upwork, delivering food with DoorDash or Instacart, selling items you no longer use on eBay or Facebook Marketplace, tutoring students online, or starting a simple Etsy shop. Pick one that fits your schedule — consistency beats income level when starting out."
+  },
+  {
+    question: "How do I stop overspending on food?",
+    answer: "Meal prep on Sundays for the week ahead — it removes the 'I'm too tired to cook' excuse that leads to takeout. Shop with a list and never hungry. Try a no-eating-out challenge for two weeks and see how much you save. Cooking at home costs roughly 5x less than dining out per meal."
+  },
+  {
+    question: "What is a good savings rate?",
+    answer: "Financial experts generally recommend saving at least 20% of your income. If that feels impossible right now, start at whatever you can — even 5% — and increase it by 1% every month. The habit matters more than the number at first. Anything above 30% puts you on a path to financial independence significantly faster."
+  },
+  {
+    question: "How do I pay off debt faster?",
+    answer: "Two proven methods: the Avalanche method (pay minimums on everything, throw extra money at the highest-interest debt first — saves the most money) or the Snowball method (pay off the smallest balance first for quick psychological wins). Either works — pick the one you'll actually stick with."
+  },
+  {
+    question: "What are beginner investing tips?",
+    answer: "Before investing, make sure you have no high-interest debt and a 3-month emergency fund. Then start with your employer's 401(k) if there's a match — that's an instant 50–100% return. Next, open a Roth IRA and invest in low-cost index funds (like S&P 500 ETFs). Time in the market beats timing the market every time."
+  },
+  {
+    question: "How do I make a budget that actually works?",
+    answer: "Use the zero-based budgeting approach: give every dollar a job. At the start of each month, plan where every dollar goes until you hit zero. Review it weekly for the first month — budgets fail not because the math is wrong but because people forget to check. Apps like YNAB or a simple spreadsheet work great."
+  },
+  {
+    question: "How much should I spend on rent?",
+    answer: "The classic rule is to keep rent under 30% of your gross monthly income. For example, if you earn $4,000/month, aim for rent under $1,200. In expensive cities this can be tough — if you go over 30%, look for ways to reduce other expenses or consider roommates to bring the percentage down."
+  }
+];
+
+function normalizeText(str) {
+  return str.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
+}
+
+function findAnswer(input) {
+  const norm = normalizeText(input);
+  // Exact match first
+  for (const faq of FAQ) {
+    if (normalizeText(faq.question) === norm) return faq.answer;
+  }
+  // Keyword match — score by how many significant words overlap
+  let best = null, bestScore = 0;
+  for (const faq of FAQ) {
+    const qWords = new Set(normalizeText(faq.question).split(/\s+/).filter(w => w.length > 3));
+    const iWords = norm.split(/\s+/).filter(w => w.length > 3);
+    const score = iWords.filter(w => qWords.has(w)).length;
+    if (score > bestScore) { bestScore = score; best = faq; }
+  }
+  return bestScore >= 2 ? best.answer : null;
+}
+
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  sendBtn.disabled = true;
+  appendMsg('user', text);
+  showTyping();
+  setTimeout(() => {
+    removeTyping();
+    const answer = findAnswer(text);
+    appendMsg('assistant', answer || "Please try a different question. 💡 Use one of the suggestion buttons above to see what I can help with!");
+    sendBtn.disabled = false;
+    input.focus();
+  }, 800);
+}
+
+// ── TAB SWITCHING ────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(b => {
+    if (b.getAttribute('onclick').includes("'" + name + "'")) b.classList.add('active');
+  });
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+buildLangBar();
+applyTranslations();
+buildQuickPrompts();
+loadDefaultExpenses();
+document.getElementById('welcomeMsg').innerHTML = t('welcomeMsg');
+</script>
+</body>
+</html>
