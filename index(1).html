@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BudgetViz — Smart Budget Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface2: #1c1c27;
+      --border: #2a2a3d;
+      --accent: #00e5a0;
+      --accent2: #7b5ea7;
+      --accent3: #f7c948;
+      --danger: #ff5c5c;
+      --text: #eeeef5;
+      --muted: #7a7a9a;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+    .glow { position: fixed; width: 600px; height: 600px; border-radius: 50%; filter: blur(120px); opacity: 0.1; pointer-events: none; z-index: 0; }
+    .glow-1 { background: var(--accent); top: -200px; left: -100px; }
+    .glow-2 { background: var(--accent2); bottom: -200px; right: -100px; }
+
+    .wrapper { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px 100px; }
+
+    /* HEADER */
+    header {
+      padding: 48px 0 36px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      animation: fadeDown 0.6s ease both;
+    }
+    .logo { font-family: var(--font-display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
+    .logo span { color: var(--accent); }
+    .tagline { font-size: 0.82rem; color: var(--muted); font-style: italic; padding-bottom: 4px; }
+
+    /* HERO */
+    .hero {
+      padding: 56px 0 48px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+      animation: fadeUp 0.7s ease 0.1s both;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,229,160,0.08);
+      border: 1px solid rgba(0,229,160,0.2);
+      border-radius: 99px; padding: 6px 14px;
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 24px;
+    }
+    .hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -0.03em; margin-bottom: 20px;
+    }
+    .hero h1 em { color: var(--accent); font-style: normal; }
+    .hero p { font-size: 1.05rem; color: var(--muted); line-height: 1.7; max-width: 620px; margin-bottom: 36px; }
+
+    .how-it-works { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 600px) { .how-it-works { grid-template-columns: 1fr; } }
+    .step-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px; position: relative; overflow: hidden;
+    }
+    .step-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent); }
+    .step-num { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: rgba(0,229,160,0.15); line-height: 1; margin-bottom: 8px; }
+    .step-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
+    .step-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+    /* MAIN GRID */
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; margin-bottom: 48px; }
+    @media (max-width: 720px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; animation: fadeUp 0.6s ease both; }
+    .card-title {
+      font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card-title::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+    /* INPUTS */
+    .input-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    label { font-size: 0.75rem; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+    input[type="number"], input[type="text"] {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: var(--font-body);
+      font-size: 1rem; padding: 12px 16px; width: 100%; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.1); }
+    input::placeholder { color: var(--muted); opacity: 0.5; }
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* EXPENSE ROWS */
+    .expense-list { display: flex; flex-direction: column; gap: 12px; }
+    .expense-row { display: grid; grid-template-columns: 1fr 120px 36px; gap: 8px; align-items: center; animation: fadeUp 0.3s ease both; }
+    .btn-remove { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; width: 36px; height: 36px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding-bottom: 2px; }
+    .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-add { margin-top: 16px; background: none; border: 1px dashed var(--border); color: var(--muted); border-radius: 10px; padding: 10px; width: 100%; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; transition: all 0.2s; }
+    .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-calculate { margin-top: 20px; background: var(--accent); color: #000; border: none; border-radius: 12px; padding: 14px; width: 100%; cursor: pointer; font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: 0.04em; transition: all 0.2s; box-shadow: 0 0 24px rgba(0,229,160,0.2); }
+    .btn-calculate:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(0,229,160,0.35); }
+
+    /* RESULTS */
+    .results-card { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+    .stat-value { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; }
+    .stat-value.income { color: var(--accent); }
+    .stat-value.expenses { color: var(--accent3); }
+    .stat-value.savings.positive { color: var(--accent); }
+    .stat-value.savings.negative { color: var(--danger); }
+    .stat-value.rate { color: var(--accent2); }
+    .chart-wrap { position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+    canvas#donutChart { max-width: 190px; }
+    .chart-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -60%); text-align: center; pointer-events: none; }
+    .chart-center-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .chart-center-value { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; }
+    .legend { width: 100%; display: flex; flex-direction: column; gap: 7px; }
+    .legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.83rem; }
+    .legend-left { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .legend-name { color: var(--muted); }
+    .legend-pct { font-family: var(--font-display); font-weight: 600; font-size: 0.88rem; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; flex-direction: column; gap: 4px; }
+    .bar-label-row { display: flex; justify-content: space-between; font-size: 0.76rem; color: var(--muted); }
+    .bar-label-amt { font-family: var(--font-display); font-weight: 600; color: var(--text); }
+    .bar-track { background: var(--surface2); border-radius: 99px; height: 7px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(0.16,1,0.3,1); width: 0; }
+    .empty-state { text-align: center; padding: 36px 20px; color: var(--muted); font-style: italic; font-size: 0.9rem; }
+
+    /* AI CHAT */
+    .section-divider { display: flex; align-items: center; gap: 16px; margin: 56px 0 40px; }
+    .section-divider-line { flex: 1; height: 1px; background: var(--border); }
+    .section-divider-label { font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+
+    .ai-header { margin-bottom: 24px; }
+    .ai-header h2 { font-family: var(--font-display); font-size: 1.8rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .ai-header h2 span { color: var(--accent); }
+    .ai-header p { color: var(--muted); font-size: 0.92rem; line-height: 1.6; max-width: 560px; }
+
+    .ai-quick-prompts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .quick-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 99px; padding: 8px 16px; font-size: 0.8rem; font-family: var(--font-body); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .quick-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.05); }
+
+    .chat-window { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .chat-messages { height: 380px; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg { display: flex; gap: 12px; animation: fadeUp 0.3s ease both; }
+    .msg.user { flex-direction: row-reverse; }
+    .msg-avatar { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; font-family: var(--font-display); }
+    .msg.assistant .msg-avatar { background: rgba(0,229,160,0.12); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+    .msg.user .msg-avatar { background: rgba(123,94,167,0.2); color: var(--accent2); border: 1px solid rgba(123,94,167,0.3); }
+    .msg-bubble { max-width: 80%; padding: 12px 16px; border-radius: 14px; font-size: 0.9rem; line-height: 1.6; }
+    .msg.assistant .msg-bubble { background: var(--surface2); border: 1px solid var(--border); border-top-left-radius: 4px; }
+    .msg.user .msg-bubble { background: rgba(123,94,167,0.2); border: 1px solid rgba(123,94,167,0.3); border-top-right-radius: 4px; }
+
+    .typing-indicator { display: flex; gap: 5px; align-items: center; }
+    .typing-indicator span { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); display: inline-block; animation: bounce 1.2s infinite; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+    .chat-input-row { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--border); }
+    .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: var(--font-body); font-size: 0.9rem; padding: 11px 16px; outline: none; resize: none; transition: border-color 0.2s; }
+    .chat-input:focus { border-color: var(--accent); }
+    .chat-input::placeholder { color: var(--muted); opacity: 0.5; }
+    .btn-send { background: var(--accent); color: #000; border: none; border-radius: 10px; padding: 11px 20px; cursor: pointer; font-family: var(--font-display); font-size: 0.85rem; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
+    .btn-send:hover { transform: translateY(-1px); box-shadow: 0 0 20px rgba(0,229,160,0.3); }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    @keyframes fadeDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <div class="logo">Budget<span>Viz</span></div>
+      <p style="color:var(--muted);font-size:0.8rem;margin-top:4px;">Track your money. See where it goes.</p>
+    </div>
+    <div class="tagline">Web Dev Term Project &mdash; 2025</div>
+  </header>
+
+  <!-- HERO DESCRIPTION -->
+  <div class="hero">
+    <div class="hero-badge">What is BudgetViz?</div>
+    <h1>Most people don't know<br>where their <em>money goes.</em></h1>
+    <p>BudgetViz is a free, browser-based budget calculator. Enter your monthly income, add your expenses, and instantly see a visual breakdown of your spending — no account needed, no app to download. Just open it and start budgeting.</p>
+    <div class="how-it-works">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Enter Your Income</div>
+        <div class="step-desc">Type in your total monthly income — salary, side hustle, whatever comes in each month.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Add Your Expenses</div>
+        <div class="step-desc">Add categories like Rent, Food, and Transportation with their monthly dollar amounts.</div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">See Your Breakdown</div>
+        <div class="step-desc">Instantly see a donut chart, bar chart, and your savings rate — all calculated in real time.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDGET CALCULATOR -->
+  <div class="main-grid">
+    <div>
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-title">Monthly Income</div>
+        <div class="input-group">
+          <label>Total Monthly Income ($)</label>
+          <input type="number" id="income" placeholder="e.g. 3500" min="0" />
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Expenses</div>
+        <div class="expense-list" id="expenseList"></div>
+        <button class="btn-add" onclick="addExpense()">+ Add Expense Category</button>
+        <button class="btn-calculate" onclick="calculate()">Calculate My Budget →</button>
+      </div>
+    </div>
+    <div class="results-card">
+      <div class="card">
+        <div class="card-title">Budget Breakdown</div>
+        <div class="empty-state" id="emptyState">Enter your income and expenses,<br>then hit Calculate.</div>
+        <div id="resultsContent" style="display:none;">
+          <div class="stats-grid" style="margin-bottom:18px;">
+            <div class="stat-box"><div class="stat-label">Income</div><div class="stat-value income" id="statIncome">$0</div></div>
+            <div class="stat-box"><div class="stat-label">Total Expenses</div><div class="stat-value expenses" id="statExpenses">$0</div></div>
+            <div class="stat-box"><div class="stat-label">Remaining</div><div class="stat-value savings" id="statSavings">$0</div></div>
+            <div class="stat-box"><div class="stat-label">Savings Rate</div><div class="stat-value rate" id="statRate">0%</div></div>
+          </div>
+          <div class="chart-wrap" style="margin-bottom:18px;">
+            <canvas id="donutChart" width="190" height="190"></canvas>
+            <div class="chart-center">
+              <div class="chart-center-label">Spent</div>
+              <div class="chart-center-value" id="chartCenterVal">0%</div>
+            </div>
+            <div class="legend" id="legend"></div>
+          </div>
+          <div class="card-title" style="margin-bottom:14px;">Spending by Category</div>
+          <div class="bar-chart" id="barChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI SECTION -->
+  <div class="section-divider">
+    <div class="section-divider-line"></div>
+    <div class="section-divider-label">AI Money Assistant</div>
+    <div class="section-divider-line"></div>
+  </div>
+
+  <div class="ai-header">
+    <h2>Get <span>Personalized Advice</span></h2>
+    <p>Not sure how to save more or make extra money? Ask our AI assistant for personalized tips on budgeting, saving strategies, and ways to grow your income.</p>
+  </div>
+
+  <div class="ai-quick-prompts">
+    <button class="quick-btn" onclick="quickPrompt('How can I save more money each month?')">💰 How do I save more?</button>
+    <button class="quick-btn" onclick="quickPrompt('What are some good side hustles to make extra money?')">💼 Side hustle ideas</button>
+    <button class="quick-btn" onclick="quickPrompt('How do I build an emergency fund from scratch?')">🛡️ Emergency fund tips</button>
+    <button class="quick-btn" onclick="quickPrompt('What is the 50/30/20 budgeting rule?')">📊 50/30/20 rule</button>
+    <button class="quick-btn" onclick="quickPrompt('How do I stop overspending on food and groceries?')">🛒 Cut grocery costs</button>
+    <button class="quick-btn" onclick="quickPrompt('What are beginner ways to invest and grow my money?')">📈 Investing basics</button>
+  </div>
+
+  <div class="chat-window">
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg assistant">
+        <div class="msg-avatar">AI</div>
+        <div class="msg-bubble">Hey! 👋 I'm your personal money assistant. Ask me anything about saving money, making more income, budgeting strategies, or how to reach your financial goals. I'm here to help!</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask me about saving money, side hustles, budgeting tips..." onkeydown="handleKey(event)"></textarea>
+      <button class="btn-send" id="sendBtn" onclick="sendMessage()">Send →</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── BUDGET CALCULATOR ────────────────────────────────────────────
+  const COLORS = ['#00e5a0','#f7c948','#7b5ea7','#ff5c5c','#4ea8de','#ff9f43','#a29bfe','#fd79a8','#55efc4','#fdcb6e'];
+  let expenses = [];
+
+  function addExpense(name='', amount='') {
+    expenses.push({ id: Date.now()+Math.random(), name, amount, color: COLORS[expenses.length % COLORS.length] });
+    renderExpenses();
+  }
+  function removeExpense(id) { expenses = expenses.filter(e => e.id !== id); renderExpenses(); }
+  function renderExpenses() {
+    const list = document.getElementById('expenseList');
+    list.innerHTML = '';
+    expenses.forEach((exp, i) => {
+      const row = document.createElement('div');
+      row.className = 'expense-row';
+      row.innerHTML = `
+        <input type="text" placeholder="e.g. Rent, Food…" value="${exp.name}" onchange="expenses[${i}].name=this.value"/>
+        <div style="position:relative;display:flex;align-items:center;">
+          <span style="position:absolute;left:12px;color:var(--muted);font-size:0.9rem;">$</span>
+          <input type="number" placeholder="0" value="${exp.amount}" min="0" style="padding-left:24px;" onchange="expenses[${i}].amount=this.value"/>
+        </div>
+        <button class="btn-remove" onclick="removeExpense(${exp.id})">×</button>`;
+      list.appendChild(row);
+    });
+  }
+  function fmt(n) { return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}); }
+  function calculate() {
+    const income = parseFloat(document.getElementById('income').value)||0;
+    const validExp = expenses.filter(e => e.name && parseFloat(e.amount)>0);
+    const totalExp = validExp.reduce((s,e)=>s+parseFloat(e.amount),0);
+    const remaining = income - totalExp;
+    const rate = income>0 ? (remaining/income)*100 : 0;
+    document.getElementById('emptyState').style.display='none';
+    document.getElementById('resultsContent').style.display='block';
+    document.getElementById('statIncome').textContent=fmt(income);
+    document.getElementById('statExpenses').textContent=fmt(totalExp);
+    const savEl=document.getElementById('statSavings');
+    savEl.textContent=fmt(remaining);
+    savEl.className='stat-value savings '+(remaining>=0?'positive':'negative');
+    document.getElementById('statRate').textContent=rate.toFixed(1)+'%';
+    document.getElementById('chartCenterVal').textContent=(income>0?Math.min((totalExp/income)*100,100):0).toFixed(0)+'%';
+    drawDonut(validExp,totalExp,income,remaining);
+    buildLegend(validExp,totalExp);
+    buildBars(validExp,totalExp);
+  }
+  function drawDonut(exps,totalExp,income,remaining) {
+    const canvas=document.getElementById('donutChart'),ctx=canvas.getContext('2d');
+    const W=canvas.width,H=canvas.height;
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2,cy=H/2,r=W/2-14,inner=r*0.6;
+    let start=-Math.PI/2;
+    const segs=[...exps.map(e=>({...e,val:parseFloat(e.amount)}))];
+    if(remaining>0) segs.push({val:remaining,color:'#ffffff18'});
+    const total=segs.reduce((s,sg)=>s+sg.val,0);
+    if(!total) return;
+    segs.forEach(seg=>{
+      const slice=(seg.val/total)*Math.PI*2;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,start+slice);ctx.closePath();
+      ctx.fillStyle=seg.color;ctx.fill();start+=slice;
+    });
+    ctx.beginPath();ctx.arc(cx,cy,inner,0,Math.PI*2);ctx.fillStyle='#13131a';ctx.fill();
+  }
+  function buildLegend(exps,totalExp) {
+    const legend=document.getElementById('legend');legend.innerHTML='';
+    exps.forEach(e=>{
+      const amt=parseFloat(e.amount),pct=totalExp>0?((amt/totalExp)*100).toFixed(1):0;
+      legend.innerHTML+=`<div class="legend-item"><div class="legend-left"><div class="legend-dot" style="background:${e.color}"></div><span class="legend-name">${e.name||'Unnamed'}</span></div><span class="legend-pct" style="color:${e.color}">${pct}%</span></div>`;
+    });
+  }
+  function buildBars(exps,totalExp) {
+    const bars=document.getElementById('barChart');bars.innerHTML='';
+    [...exps].sort((a,b)=>parseFloat(b.amount)-parseFloat(a.amount)).forEach(e=>{
+      const amt=parseFloat(e.amount),pct=totalExp>0?(amt/totalExp)*100:0;
+      const div=document.createElement('div');div.className='bar-row';
+      div.innerHTML=`<div class="bar-label-row"><span>${e.name||'Unnamed'}</span><span class="bar-label-amt">${fmt(amt)}</span></div><div class="bar-track"><div class="bar-fill" style="background:${e.color};width:0%" data-w="${pct.toFixed(1)}%"></div></div>`;
+      bars.appendChild(div);
+    });
+    requestAnimationFrame(()=>{ document.querySelectorAll('.bar-fill').forEach(b=>{b.style.width=b.dataset.w;}); });
+  }
+  addExpense('Rent / Housing',1200);
+  addExpense('Food & Groceries',400);
+  addExpense('Transportation',200);
+  addExpense('Utilities',150);
+
+  // ── AI CHAT ──────────────────────────────────────────────────────
+  let chatHistory = [];
+
+  function quickPrompt(text) { document.getElementById('chatInput').value=text; sendMessage(); }
+  function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} }
+
+  function appendMsg(role,text) {
+    const box=document.getElementById('chatMessages');
+    const div=document.createElement('div');
+    div.className=`msg ${role}`;
+    div.innerHTML=`<div class="msg-avatar">${role==='assistant'?'AI':'You'}</div><div class="msg-bubble">${text.replace(/\n/g,'<br>')}</div>`;
+    box.appendChild(div);
+    box.scrollTop=box.scrollHeight;
+  }
+  function showTyping() {
+    const box=document.getElementById('chatMessages');
+    const div=document.createElement('div');
+    div.className='msg assistant';div.id='typingMsg';
+    div.innerHTML=`<div class="msg-avatar">AI</div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+    box.appendChild(div);box.scrollTop=box.scrollHeight;
+  }
+  function removeTyping() { const t=document.getElementById('typingMsg');if(t)t.remove(); }
+
+  async function sendMessage() {
+    const input=document.getElementById('chatInput');
+    const sendBtn=document.getElementById('sendBtn');
+    const text=input.value.trim();
+    if(!text) return;
+    input.value='';sendBtn.disabled=true;
+    appendMsg('user',text);
+    chatHistory.push({role:'user',content:text});
+    showTyping();
+    try {
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:1000,
+          system:`You are a friendly personal finance assistant inside BudgetViz, a budget calculator app. Help users save more money and earn more income. Give practical, concise advice using short paragraphs or bullet points. Be encouraging and realistic. Do not give advice that requires a licensed financial advisor.`,
+          messages:chatHistory
+        })
+      });
+      const data=await res.json();
+      removeTyping();
+      const reply=data.content?.[0]?.text||'Sorry, I could not get a response. Please try again.';
+      chatHistory.push({role:'assistant',content:reply});
+      appendMsg('assistant',reply);
+    } catch(err) {
+      removeTyping();
+      appendMsg('assistant','Sorry, something went wrong. Please check your connection and try again.');
+    }
+    sendBtn.disabled=false;input.focus();
+  }
+</script>
+</body>
+</html>
